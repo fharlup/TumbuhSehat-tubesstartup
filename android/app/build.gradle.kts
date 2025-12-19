@@ -14,28 +14,28 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.tumbuhsehat.app"
-    compileSdk = 35
+    namespace = "com.tumbuhsehat.app" // Pastikan namespace ini sesuai dengan package name kamu
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
-    
+
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
-    
+
     defaultConfig {
         applicationId = "com.tumbuhsehat.app"
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
-    
+
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
             create("release") {
@@ -46,10 +46,9 @@ android {
             }
         }
     }
-    
+
     buildTypes {
         release {
-            // Hanya set signing config jika file keystore ada
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -65,4 +64,14 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+}
+
+// --- PERBAIKAN UTAMA DI SINI ---
+// Memaksa Gradle menggunakan versi androidx.core 1.15.0
+// Ini untuk mengatasi error karena plugin kamu belum support versi 1.17.0
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core-ktx:1.15.0")
+        force("androidx.core:core:1.15.0")
+    }
 }
