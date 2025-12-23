@@ -13,7 +13,6 @@ import '../../cubit/beranda/beranda_cubit.dart';
 import '../../cubit/profile/profile_cubit.dart';
 import 'beranda_screen.dart';
 import 'chatbot_screen.dart';
-import 'komunitas_screen.dart';
 import 'profil_screen.dart';
 import 'scan_screen.dart';
 
@@ -39,43 +38,29 @@ class _MainScreenContent extends StatefulWidget {
 class __MainScreenContentState extends State<_MainScreenContent> {
   int _activeIndex = 0;
 
+  // --- DAFTAR HALAMAN (SCAN PINDAH KE POSISI 3) ---
   final List<Widget> _pages = [
     const BerandaScreen(),
-    ChatbotScreen(),
-    KomunitasScreen(),
+    const ChatbotScreen(),
+    const ScanScreen(), // <-- Posisi 3 sekarang Scan
     BlocProvider(
       create: (_) => di.sl<ProfileCubit>(),
       child: const ProfilScreen(),
     ),
   ];
 
-  final List<String> _iconNames = ['Beranda', 'Chatbot', 'Komunitas', 'Profil'];
-
-  void _onScanPressed() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => const ScanScreen()));
-  }
+  // Nama file icon untuk referensi
+  final List<String> _iconNames = ['Beranda', 'Chatbot', 'Scan', 'Profil'];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Tampilkan halaman
       body: _pages[_activeIndex],
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onScanPressed,
-        backgroundColor: TSColor.mainTosca.primary,
-        shape: const CircleBorder(),
-        child: SvgPicture.asset(
-          Assets.icons.scan.path,
-          colorFilter: ColorFilter.mode(
-            TSColor.monochrome.pureWhite,
-            BlendMode.srcIn,
-          ),
-          width: 32,
-          height: 32,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // --- TOMBOL TENGAH (FAB) DIHAPUS TOTAL DI SINI ---
+      
+      // --- NAVIGASI BAWAH ---
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -91,32 +76,61 @@ class __MainScreenContentState extends State<_MainScreenContent> {
           height: 80,
           backgroundColor: TSColor.monochrome.white,
           itemCount: _pages.length,
+          
+          // --- SETTING PENTING: GAP DIHILANGKAN ---
+          gapLocation: GapLocation.none, // Agar bar rata, tidak ada lubang tengah
+          notchSmoothness: NotchSmoothness.smoothEdge,
+          leftCornerRadius: 24,
+          rightCornerRadius: 24,
+          
+          activeIndex: _activeIndex,
+          onTap: (index) => setState(() => _activeIndex = index),
+          
+          // --- TAMPILAN ICON ---
           tabBuilder: (int index, bool isActive) {
-            final iconName = _iconNames[index];
             final color = isActive
                 ? TSColor.mainTosca.primary
                 : TSColor.monochrome.black;
             final style = isActive ? TSFont.bold.small : TSFont.regular.small;
-            final assetPath = isActive
-                ? 'assets/icons/$iconName Active.svg'
-                : 'assets/icons/$iconName Inactive.svg';
+            
+            // Logika Label
+            String label = _iconNames[index];
+            
+            // WIDGET ICON
+            Widget iconWidget;
+
+            // KHUSUS INDEX 2 (SCAN): Kita pakai Icon bawaan Flutter (Kamera)
+            // agar tidak error mencari asset SVG yang belum ada.
+            if (index == 2) {
+              iconWidget = Icon(
+                Icons.camera_alt_rounded,
+                size: 28,
+                color: color,
+              );
+            } else {
+              // SELAIN SCAN: Pakai SVG dari Assets
+              // Pastikan nama file: 'Beranda Active.svg', 'Chatbot Active.svg', dst.
+              final assetPath = isActive
+                  ? 'assets/icons/${_iconNames[index]} Active.svg'
+                  : 'assets/icons/${_iconNames[index]} Inactive.svg';
+              
+              iconWidget = SvgPicture.asset(
+                assetPath, 
+                width: 24, 
+                height: 24
+              );
+            }
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SvgPicture.asset(assetPath, width: 24, height: 24),
+                iconWidget,
                 const SizedBox(height: 4),
-                Text(iconName, style: style.withColor(color)),
+                Text(label, style: style.withColor(color)),
               ],
             );
           },
-          activeIndex: _activeIndex,
-          gapLocation: GapLocation.center,
-          notchSmoothness: NotchSmoothness.softEdge,
-          leftCornerRadius: 24,
-          rightCornerRadius: 24,
-          onTap: (index) => setState(() => _activeIndex = index),
         ),
       ),
     );
