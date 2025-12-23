@@ -48,6 +48,7 @@ dependencies:
   timezone: ^0.9.0
   syncfusion_flutter_gauges: ^31.1.19
   midtrans_snap: ^1.0.1
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

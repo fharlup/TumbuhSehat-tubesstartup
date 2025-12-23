@@ -15,6 +15,7 @@ import 'presentation/cubit/login/login_cubit.dart';
 import 'presentation/cubit/onboarding/onboarding_cubit.dart';
 import 'presentation/cubit/scan/scan_cubit.dart';
 import 'presentation/cubit/splash/splash_cubit.dart';
+
 import 'presentation/screens/splash_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -26,7 +27,7 @@ Future<void> main() async {
   // await clearTumbuhSehatPreferencesOnDebug();
   // await deleteDatabaseOnDebug();
   final dbHelper = DatabaseHelper.instance;
-  await dbHelper.database;
+  await dbHelper.database;   
   tz.initializeTimeZones();
   await NotificationService.instance.init(navigatorKey);
   await di.init();

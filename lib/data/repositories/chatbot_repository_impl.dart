@@ -1,14 +1,30 @@
-import 'package:dartz/dartz.dart';
-
-import '../../core/error/exceptions.dart';
-import '../../core/error/failures.dart';
+import 'package:dartz/dartz.dart'; // Pastikan ada dartz
+import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../domain/repositories/chatbot_repository.dart';
-import '../datasources/remote/chatbot_remote_datasource.dart';
-
+import '../../core/error/failures.dart'; // Sesuaikan path failure kamu
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ChatbotRepositoryImpl implements ChatbotRepository {
-  final ChatbotRemoteDataSource remoteDataSource;
+  late final GenerativeModel _model;
+  ChatSession? _chatSession;
 
-  ChatbotRepositoryImpl({required this.remoteDataSource});
+  ChatbotRepositoryImpl() {
+    final apiKey = dotenv.env['GEMINI_API_KEY']!;
+
+    _model = GenerativeModel(
+      model: 'gemini-2.5-flash',
+      apiKey: apiKey,
+      systemInstruction: Content.system("""
+        Kamu adalah 'Sobat TumbuhSehat', seorang Ahli Gizi profesional, ramah, dan empatik.
+
+        Tugasmu:
+        1. Menjawab pertanyaan seputar gizi, nutrisi, diet sehat, pencegahan stunting, dan kesehatan keluarga.
+        2. Gunakan bahasa Indonesia yang sopan dan mudah dipahami.
+        3. Jangan mendiagnosa penyakit berat.
+        4. Tolak topik di luar kesehatan dengan sopan.
+        5. Jawaban maksimal 3 paragraf.
+      """),
+    );
+  }
 
   @override
   Future<Either<Failure, String>> getChatResponse({
@@ -16,13 +32,16 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     String? threadId,
   }) async {
     try {
-      final response = await remoteDataSource.getChatResponse(
-        message,
-        threadId,
-      );
-      return Right(response);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      _chatSession ??= _model.startChat();
+      final response = await _chatSession!.sendMessage(Content.text(message));
+
+      if (response.text == null) {
+        return const Left(ServerFailure("AI tidak memberikan respon."));
+      }
+
+      return Right(response.text!);
+    } catch (e) {
+      return Left(ServerFailure("Gagal terhubung ke Gemini: $e"));
     }
   }
 }

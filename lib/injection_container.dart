@@ -6,22 +6,31 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/network/network_info.dart';
 import 'core/services/notification_service.dart';
 import 'core/utils/constants.dart';
+import 'core/database/database_helper.dart';
+
+// --- DATA SOURCES ---
 import 'data/datasources/local/food_local_data_source.dart';
 import 'data/datasources/local/onboarding_local_data_source.dart';
 import 'data/datasources/remote/analysis_remote_datasource.dart';
-import 'data/datasources/remote/chatbot_remote_datasource.dart';
 import 'data/datasources/remote/food_remote_data_source.dart';
 import 'data/datasources/remote/onboarding_remote_data_source.dart';
-import 'data/repositories/chatbot_repository_impl.dart';
+
+// --- REPOSITORIES ---
+// Pastikan ini mengarah ke file repository Gemini yang baru kamu buat
+import 'data/repositories/chatbot_repository_impl.dart'; 
 import 'data/repositories/food_repository_impl.dart';
 import 'data/repositories/nutrition_repository_impl.dart';
 import 'data/repositories/onboarding_repository_impl.dart';
 import 'data/repositories/recommendation_repository_impl.dart';
+
+// --- DOMAIN REPOSITORIES ---
 import 'domain/repositories/chatbot_repository.dart';
 import 'domain/repositories/food_repository.dart';
 import 'domain/repositories/nutrition_repository.dart';
 import 'domain/repositories/onboarding_repository.dart';
 import 'domain/repositories/recommendation_repository.dart';
+
+// --- CUBITS ---
 import 'presentation/cubit/beranda/beranda_cubit.dart';
 import 'presentation/cubit/calory_history/calory_history_cubit.dart';
 import 'presentation/cubit/chatbot/chatbot_cubit.dart';
@@ -35,14 +44,14 @@ import 'presentation/cubit/recommendation/recommendation_cubit.dart';
 import 'presentation/cubit/scan/scan_cubit.dart';
 import 'presentation/cubit/scan_analysis/scan_analysis_cubit.dart';
 import 'presentation/cubit/splash/splash_cubit.dart';
-import 'core/database/database_helper.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // EXTERNAL
+  // ================= EXTERNAL =================
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
+  
   sl.registerLazySingleton(() {
     final options = BaseOptions(
       baseUrl: AppConstants.BASE_URL,
@@ -52,13 +61,14 @@ Future<void> init() async {
     );
     return Dio(options);
   });
+  
   sl.registerLazySingleton(() => Connectivity());
 
-  // CORE
+  // ================= CORE =================
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl(), sl()));
   sl.registerLazySingleton(() => DatabaseHelper.instance);
 
-  // Data sources
+  // ================= DATA SOURCES =================
   sl.registerLazySingleton<OnboardingRemoteDataSource>(
     () => OnboardingRemoteDataSourceImpl(client: sl()),
   );
@@ -74,11 +84,10 @@ Future<void> init() async {
   sl.registerLazySingleton<AnalysisRemoteDataSource>(
     () => AnalysisRemoteDataSourceImpl(client: sl()),
   );
-  sl.registerLazySingleton<ChatbotRemoteDataSource>(
-    () => ChatbotRemoteDataSourceImpl(client: sl()),
-  );
+  
+  // NOTE: ChatbotRemoteDataSource dihapus karena Gemini SDK menangani koneksi sendiri.
 
-  // Repository
+  // ================= REPOSITORIES =================
   sl.registerLazySingleton<OnboardingRepository>(
     () => OnboardingRepositoryImpl(
       remoteDataSource: sl(),
@@ -108,15 +117,17 @@ Future<void> init() async {
       localDataSource: sl(),
     ),
   );
+  
+  // --- PERUBAHAN UTAMA: REGISTER GEMINI REPOSITORY ---
+  // Tidak perlu parameter remoteDataSource lagi
   sl.registerLazySingleton<ChatbotRepository>(
-    () => ChatbotRepositoryImpl(remoteDataSource: sl()),
+    () => ChatbotRepositoryImpl(),
   );
 
-  // SERVICE
+  // ================= SERVICE =================
   sl.registerLazySingleton(() => NotificationService.instance);
 
-  // FEATURES
-  // Cubit
+  // ================= FEATURES (CUBIT) =================
   sl.registerFactory(
     () => SplashCubit(onboardingRepository: sl(), sharedPreferences: sl()),
   );
@@ -141,8 +152,7 @@ Future<void> init() async {
     ),
   );
   sl.registerFactory(
-    () =>
-        DailyDetailCubit(nutritionRepository: sl(), onboardingRepository: sl()),
+    () => DailyDetailCubit(nutritionRepository: sl(), onboardingRepository: sl()),
   );
   sl.registerFactory(
     () => RecommendationCubit(
@@ -159,7 +169,10 @@ Future<void> init() async {
       notificationService: sl(),
     ),
   );
+  
+  // ChatbotCubit tetap sama, dia otomatis mengambil ChatbotRepositoryImpl (Gemini)
   sl.registerFactory(() => ChatbotCubit(chatbotRepository: sl()));
+  
   sl.registerFactory(
     () => ScanAnalysisCubit(nutritionRepository: sl(), foodRepository: sl()),
   );
